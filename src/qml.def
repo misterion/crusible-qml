@@ -1,0 +1,133 @@
+syntaxdef qml {
+
+/\s+/m : ;
+
+#js keywords
+/(abstract|b(oolean|reak|yte)|c(a(se|tch)|har|lass|on(st|tinue))\
+|d(e(fault|lete)|o(|uble))|e(lse|x(tends|port))|f(alse|inal(|ly)|loat|or|unction)|goto\
+|i(f|mp(lements|ort)|n(stanceof|t(|erface)))|long|n(ative|ew|ull)\
+|p(ackage|r(ivate|otected)|ublic)|return|s(hort|tatic|uper|witch|ynchronized)\
+|t(h(is|row(|s))|r(ansient|ue|y))|undefined|v(ar|o(id|latile))|w(ith|hile))\b/ : {
+      region {
+        type=keyword;
+        index=word;
+      }
+}
+
+#qml items
+/\b([A-Z][A-z\.0-9]+)(?=(?: *?\{))\b/ : {
+	region {
+		type=html_tag;
+		index=word;
+	}
+}
+
+#property name
+/\b(?:(?<!=|'|"|\{|\())(([A-z\.]+)(?=(?::))|(anchors|font)|((?<=(?:signal ))([a-z][A-z]*))|((?<=(?:default )?property (?:action|bool|color|date|double|enumeration|font|list|int|point|real|rect|size|string|time|url|variant|vector3d|QtObject) )([a-z][A-z]*)))\b/ : {
+	region {
+		type=css_attrib_key;
+		index=word;
+	}
+}
+
+#as namespace
+/\b((?<=as ).+)\b/ : {
+	region {
+		type=html_tag;
+		index=word;
+	}
+}
+
+#property & signals 
+/\b(property (alias|action|bool|color|date|double|enumeration|font|list|int|point|real|rect|size|string|time|url|variant|vector3d|QtObject))|(signal)\b/ : {
+	region {
+		type=class_id;
+		index=word;
+	}
+}
+
+/[\p{L}_\$][\p{L}\p{N}_\$]*/ : {
+      region {
+         type=identifier;
+         index=word;
+      }
+  }
+
+# string literals
+/"/ : {
+        context {
+            /\\./: ;
+            /$/m : exit;
+            "\"" : exit;
+        }
+        region ${ALL} {
+               type=string;
+        }
+    }
+
+# char literal
+/'/ : {
+        context {
+            /\\./: ;
+            /$/m : exit;
+            "'" : exit;
+        }
+        region ${ALL} {
+               type=char_literal;
+        }
+    }
+
+/\/\/.*$/m : {
+      todo(${0});
+      region {
+         type=comment;
+	     index=prose;
+	     findlinks=true;
+      }
+   }
+
+/(0x[0-9a-f]+l?)|([0-9]+(\.[0-9]*)?|\.[0-9]+)(e(\+|-)?[0-9]+)?(f|l|d)?/i : {
+       region {
+          type=numeric;
+       }
+   }
+
+/\/\*(.*?)\*\//s : {
+      todo(${1});
+      region {
+         type=comment;
+         findlinks=true;
+      }
+      region ${1} {
+	     index=prose;
+      }
+   }
+
+   context todo {
+      /(?i)todo\s.*/ : {
+        region {
+          type=todo;
+        }
+      }
+
+   }
+
+   # regex
+   /
+     \/
+     ([^\n\r*\\\/]|\\[^\r\n])# RegularExpressionFirstChar
+   /x : {
+        context { # RegularExpresionChar*
+            /\\[^\r\n]/ : ;
+            /\// : exit;
+            /[\r\n]/ : exit; # for safety
+        }
+        region ${ALL} {
+            type=string;
+        }
+      }
+    }
+}
+
+
+
